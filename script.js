@@ -12,19 +12,36 @@ let previewCtx = previewCanvas.getContext('2d');
 let faceDetectionModelLoaded = false;
 let cropRect = { x: 0, y: 0, width: 0, height: 0 }; // 當前裁剪框的座標和尺寸
 
+// --- 取得 GitHub Pages 的基底路徑 ---
+function getBasePath() {
+    // 獲取當前頁面的路徑名，例如 /your-repo-name/index.html
+    const pathname = window.location.pathname;
+    // 如果路徑名不為 / (根目錄)，則提取第一個子目錄作為基底路徑
+    // 例如 /your-repo-name/ -> /your-repo-name
+    // 例如 / -> ''
+    const basePathMatch = pathname.match(/^\/([^\/]+)/);
+    // 如果是像 "your-username.github.io" 這樣的根域名，basePath 會是空字串
+    // 如果是 "your-username.github.io/your-repo-name/"，basePath 會是 "/your-repo-name"
+    return basePathMatch ? basePathMatch[0] : '';
+}
+
+const MODELS_PATH = `${getBasePath()}/models`; // 動態設定模型路徑
+console.log('模型將從此路徑載入:', MODELS_PATH);
+
+
 // --- 載入 Face-API.js 模型 ---
 async function loadModels() {
     loadingMessage.style.display = 'block';
     try {
-        // 請確保 'models' 資料夾與 index.html 在同一層級
-        await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
+        // 使用動態計算的 MODELS_PATH
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODELS_PATH);
         faceDetectionModelLoaded = true;
         loadingMessage.style.display = 'none';
         console.log('Face-API.js 模型載入成功！');
     } catch (error) {
         loadingMessage.style.display = 'none';
         errorMessage.style.display = 'block';
-        errorMessage.textContent = `模型載入失敗：${error.message}。請確認網路連線或 models 資料夾路徑。`;
+        errorMessage.textContent = `模型載入失敗：${error.message}。請確認網路連線或 models 資料夾路徑是否正確 (${MODELS_PATH})。`;
         console.error('模型載入失敗:', error);
     }
 }
@@ -150,9 +167,7 @@ function updatePreview() {
 
     previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
 
-    // 繪製裁剪後的區域到預覽 Canvas
     // 計算源圖片的裁剪區域與目標預覽區域的縮放比例
-    // 為了讓裁剪內容填滿預覽框，使用 Math.max 讓圖片放大以適應最小邊
     const aspectRatio = cropRect.width / cropRect.height;
     let sx = cropRect.x;
     let sy = cropRect.y;
@@ -227,17 +242,18 @@ downloadBtn.addEventListener('click', () => {
     let sWidth = cropRect.width;
     let sHeight = cropRect.height;
 
-    let dx = 0;
-    let dy = 0;
-    let dWidth = finalCanvas.width;
-    let dHeight = finalCanvas.height;
+    // 重新計算裁剪區域的長寬比，因為 cropRect 可能已經被使用者調整過
+    const currentCropAspectRatio = cropRect.width / cropRect.height;
+    const outputAspectRatio = outputWidth / outputHeight;
 
     // 調整源裁剪區域以適應目標輸出框的比例，實現「Cover」效果
-    if (finalCanvas.width / finalCanvas.height > aspectRatio) { // aspectRatio 為 cropRect.width / cropRect.height
-        sHeight = sWidth / (finalCanvas.width / finalCanvas.height);
+    if (outputAspectRatio > currentCropAspectRatio) {
+        // 輸出框比裁剪區域寬，需要調整源裁剪的高度
+        sHeight = sWidth / outputAspectRatio;
         sy = cropRect.y + (cropRect.height - sHeight) / 2;
     } else {
-        sWidth = sHeight * (finalCanvas.width / finalCanvas.height);
+        // 輸出框比裁剪區域高，需要調整源裁剪的寬度
+        sWidth = sHeight * outputAspectRatio;
         sx = cropRect.x + (cropRect.width - sWidth) / 2;
     }
 
@@ -250,16 +266,16 @@ downloadBtn.addEventListener('click', () => {
     finalCtx.drawImage(
         currentImage,
         sx, sy, sWidth, sHeight,
-        dx, dy, dWidth, dHeight
+        0, 0, finalCanvas.width, finalCanvas.height
     );
 
-    // 如果是圓形輸出，則在這裡應用圓形遮罩
+    // 如果是圓形輸出，則在這裡應用圓形遮罩 (範例，需要加入 UI 選擇)
     // finalCtx.save();
     // finalCtx.beginPath();
     // finalCtx.arc(finalCanvas.width / 2, finalCanvas.height / 2, Math.min(finalCanvas.width, finalCanvas.height) / 2, 0, Math.PI * 2, true);
     // finalCtx.closePath();
     // finalCtx.clip();
-    // finalCtx.drawImage(currentImage, ...); // 再次繪製圖片到剪裁後的圓形區域
+    // finalCtx.drawImage(currentImage, sx, sy, sWidth, sHeight, 0, 0, finalCanvas.width, finalCanvas.height); // 再次繪製圖片到剪裁後的圓形區域
     // finalCtx.restore();
 
     // 選擇輸出格式，這裡使用 PNG，也可以是 image/jpeg
@@ -372,18 +388,19 @@ document.addEventListener('mousemove', (e) => {
         newHeight = Math.min(newHeight, currentImage.height - newY);
 
         // 如果需要鎖定比例 (例如正方形或 2 吋比例)，在此處調整 newWidth/newHeight
-        // 舉例：鎖定為正方形
-        // const desiredAspectRatio = 1; // 1:1
-        // if (isResizing) {
-        //     if (Math.abs(newWidth / newHeight - desiredAspectRatio) > 0.01) { // 避免浮點數誤差
-        //         if (activeHandle.includes('left')) { // 從左邊調整，保持右邊不動
-        //             newWidth = newHeight * desiredAspectRatio;
+        // 例如：假設我們有一個 'selectedOutputRatio' 變數 (例如 1 代表正方形，或 413/531 代表 2 吋)
+        // if (selectedOutputRatio) {
+        //     const currentRatio = newWidth / newHeight;
+        //     if (Math.abs(currentRatio - selectedOutputRatio) > 0.01) {
+        //         if (activeHandle.includes('left')) { // 如果是左邊手柄，調整 newX 和 newWidth
+        //             newWidth = newHeight * selectedOutputRatio;
         //             newX = startCropX + startCropWidth - newWidth;
-        //         } else { // 從右邊調整，保持左邊不動
-        //             newHeight = newWidth / desiredAspectRatio;
+        //         } else { // 如果是右邊手柄，調整 newHeight
+        //             newHeight = newWidth / selectedOutputRatio;
         //         }
         //     }
         // }
+
 
         cropRect.x = newX;
         cropRect.y = newY;
