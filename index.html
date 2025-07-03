@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCrop - 人像快裁</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>SmartCrop - 人像快裁</h1>
+
+    <div class="container">
+        <div class="upload-section">
+            <h2>上傳您的照片</h2>
+            <input type="file" id="imageUpload" accept="image/*">
+            <div class="info-message">
+                請上傳一張包含人像的圖片。<br>
+                偵測與處理皆在您的瀏覽器中進行，圖片不會上傳至伺服器。
+            </div>
+            <div id="loadingMessage" class="loading" style="display: none;">載入模型中，請稍候...</div>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+            <div class="canvas-container">
+                <canvas id="originalCanvas"></canvas>
+                <div id="cropOverlay" class="crop-overlay" style="display: none;">
+                    <div class="crop-handle top-left"></div>
+                    <div class="crop-handle top-right"></div>
+                    <div class="crop-handle bottom-left"></div>
+                    <div class="crop-handle bottom-right"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-section">
+            <h2>預覽與調整</h2>
+            <div class="info-message">
+                下方為裁剪後的預覽。<br>
+                您可以在左側圖片上拖曳或調整裁剪框。
+            </div>
+            <canvas id="previewCanvas"></canvas>
+            <button id="downloadBtn" style="display: none; margin-top: 20px;">下載圖片</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

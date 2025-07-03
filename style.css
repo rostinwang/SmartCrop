@@ -1,0 +1,124 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px;
+    background-color: #f4f7f6;
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.upload-section, .preview-section {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    flex: 1;
+    min-width: 300px;
+}
+
+input[type="file"] {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: calc(100% - 22px);
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.canvas-container {
+    position: relative;
+    width: 100%;
+    /* 為了避免圖片過大，限制 canvas 容器的最大寬度 */
+    max-width: 500px;
+    margin: 0 auto;
+    border: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+canvas {
+    display: block;
+    width: 100%; /* 讓 canvas 填滿容器 */
+    height: auto; /* 高度自動調整 */
+}
+
+#originalCanvas {
+    border: 1px solid #ccc;
+}
+
+#previewCanvas {
+    border: 1px solid #ccc;
+    margin-top: 20px;
+    background-color: #f0f0f0; /* 預覽區背景色 */
+}
+
+.info-message {
+    margin-top: 15px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.loading {
+    margin-top: 15px;
+    color: #007bff;
+    font-weight: bold;
+}
+
+.error-message {
+    margin-top: 15px;
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* 裁剪框樣式 - 用於視覺化，實際裁剪在 Canvas 上繪製 */
+.crop-overlay {
+    position: absolute;
+    border: 2px dashed red;
+    box-sizing: border-box; /* 確保邊框不會增加元素總大小 */
+    cursor: move; /* 拖曳游標 */
+    /* 為了方便觀察，可以增加一個半透明背景 */
+    background-color: rgba(255, 0, 0, 0.1);
+}
+
+/* 裁剪框的縮放手柄 */
+.crop-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: blue;
+    border: 1px solid white;
+    border-radius: 50%;
+}
+
+.crop-handle.top-left { top: -5px; left: -5px; cursor: nwse-resize; }
+.crop-handle.top-right { top: -5px; right: -5px; cursor: nesw-resize; }
+.crop-handle.bottom-left { bottom: -5px; left: -5px; cursor: nesw-resize; }
+.crop-handle.bottom-right { bottom: -5px; right: -5px; cursor: nwse-resize; }
